@@ -1,0 +1,24 @@
+require:
+  - standard
+  - rubocop-performance
+  - rubocop-rspec
+  - rubocop-rake
+
+inherit_gem:
+  standard: config/base.yml
+
+AllCops:
+  NewCops: enable
+  Exclude:
+    - .github/**/*
+    - coverage/**/*
+    - doc/**/*
+    - pkg/**/*
+    - sig/**/*
+    - vendor/bundle/**/*
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
