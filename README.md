@@ -1,12 +1,24 @@
-# Diana - Lazy Dependency Injection
+# Diana - Dependency Injection DSL
+
+This module offers a DSL designed for the lazy resolution of dependency injections.
+
+It facilitates efficient and deferred initialization of dependencies,
+ensuring that resources are only allocated when necessary.
+
+This approach optimizes performance of application.
 
 ## Features
 
-- Lazy nature, each dependency will be lazily initialized only when accessed
-- Work anywhere - custom classes, sidekiq jobs or Rails controllers
-- Dependencies are injected in child classes also.
-- No any new DSL to remember
-- Supported ruby versions - *(2.6 .. 3.3), head, jruby-9.4, truffleruby-24*
+- **Lazy Initialization**: Dependencies are lazily initialized, ensuring
+  they are only loaded when you need them, optimizing performance
+- **Transparent Behavior**: No hidden or undocumented behaviors, providing a
+  clear and predictable experience
+- **Flexible Integration**: No dependencies, no mandatory DI container, but you
+  can seamlessly integrate with any container of your choice.
+- **Broad Compatibility**: Supports a wide range of Ruby versions,
+  including 2.6 to 3.3, head, JRuby-9.4, and TruffleRuby-24.
+
+These features are designed to make your development process smoother and more efficient!
 
 ## Installation
 
@@ -16,66 +28,140 @@ bundle add diana
 
 ## Usage
 
-Declare your dependencies with named procs and use them:
+The Diana gem provides a streamlined way to define and manage dependencies in
+your Ruby application.
+
+### Defining Dependencies
+
+Use the `.dependencies` method to define your dependencies. You can also use the
+`.dependency` alias if you prefer.
 
 ```ruby
-  class SomeClass
-    # Declare your named dependencies
-    include Diana.dependencies(
-      foo: proc { Foo.new },
-      bar: proc { Bar.new },
-    )
+class SomeClass
+  include Diana.dependencies(
+    foo: proc { Foo.new },
+    bar: proc { Bar.new }
+  )
 
-    # Use them by names
-    def some_method
-      foo
-      bar
-    end
+  def some_method
+    foo # => Foo.new
+    bar # => Bar.new
   end
+end
 ```
 
-Dependencies can be changed during initialization:
+### Lazy Initialization
+
+Dependencies are lazily initialized, meaning they are only loaded when accessed
+for the first time.
+
+### Custom Resolvers
+
+The default resolver handles only procs, functioning as follows:
 
 ```ruby
-  SomeClass.new(foo: FooFooFoo.new)
+DEFAULT_RESOLVER = proc do |dependency|
+  dependency.is_a?(Proc) ? dependency.call : dependency
+end
 ```
 
-It will work if class has custom initializer:
+You can customize the resolver to fit your needs. For instance, to resolve
+strings to a DI container, you can modify the resolver like this:
 
 ```ruby
-  class SomeClass
-    include Diana.dependencies(foo: proc { Foo.new })
+Diana.resolver = proc do |dependency|
+  case dependency
+  when String then DI_CONTAINER[dependency]
+  when Proc then dependency.call
+  else dependency
+  end
+end
 
-    def initialize(arg, kwarg:)
-      @arg = arg
-      @kwarg = kwarg
-    end
+SomeClass.include Diana.dependencies(foo: 'utils.foo') # => DI_CONTAINER['utils.foo']
+```
+
+### Methods Visibility
+
+By default, dependency methods are **private**. You can change this behavior by
+configuring the Diana module:
+
+```ruby
+Diana.methods_visibility = :public
+```
+
+Using public methods can be more convenient in tests, allowing you to access the
+real dependency and stub its methods, rather than overwriting the dependency
+entirely. This approach helps ensure you are testing the correct dependency.
+
+## How it works
+
+- **Dependency Storage**: The `@_diana_dependencies` class variable holds the
+  provided dependencies.
+- **Initialization**: An `#initialize` method is added to handle dependency
+  injection.
+- **Reader Methods**: Private (by default) reader methods for dependencies are
+  created.
+- **Lazy Resolution**: Dependencies are resolved upon first access using a
+  configurable resolver.
+
+Here is an example of dependency injection and the final pseudo-code generated
+by the gem:
+
+```ruby
+class SomeClass
+  include Diana.dependencies(
+    foo: proc { Foo.new },
+    bar: proc { Bar.new }
+  )
+end
+
+# Generated pseudo-code:
+class SomeClass
+  @_diana_dependencies = {
+    foo: proc { Foo.new },
+    bar: proc { Bar.new }
+  }
+
+  def initialize(foo: nil, bar: nil)
+    @foo = foo if foo
+    @bar = bar if bar
   end
 
-  SomeClass.new(arg, kwarg: kwarg, foo: FooFooFoo.new)
-```
+  private
 
-## Usage in tests
-
-Just overwrite your dependencies in initializer or stub dependencies public
-methods.
-
-```ruby
-  # Overwrite dependencies
-  let(:service) { described_class.new(foo: other_foo, bar: other_bar) }
-
-  # Or stub dependencies public methods
-  let(:service) { described_class.new }
-
-  before do
-    allow(service.foo).to receive(:call)
-    allow(service.bar).to receive(:perform)
+  def foo
+    @foo ||= Diana.resolve(self.class.instance_variable_get(:@_diana_dependencies)[:foo])
   end
+
+  def bar
+    @bar ||= Diana.resolve(self.class.instance_variable_get(:@_diana_dependencies)[:bar])
+  end
+end
 ```
+
+This structure ensures efficient and flexible dependency management.
+
+## Important Notes
+
+- This gem is intended for use with classes that lack a manually defined
+  `#initialize` method. This design choice prevents  conflicts or unpredictable
+  behavior with custom #initialize methods. If you do add a custom `#initialize`
+  method, it will take precedence. In such cases, ensure you include a
+  `super(**deps)` call to override dependencies if needed.
+
+- We do not perform any argument modifications and we do not call `super`
+  in dependencies `#initialize` method. This approach is chosen to ensure
+  optimal performance and avoid unexpected behavior.
+
+- Dependencies defined in a parent class are not accessible in nested classes.
+  You should define dependencies within each class where they are required.
+
+These limitations ensure that the gem remains predictable and performant,
+avoiding any hidden complexities or unexpected behaviors.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/agkushkov/diana.
+Bug reports and pull requests are welcome on GitHub at <https://github.com/aglushkov/diana>.
 
 ## License
 
