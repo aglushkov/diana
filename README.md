@@ -55,31 +55,6 @@ end
 Dependencies are lazily initialized, meaning they are only loaded when accessed
 for the first time.
 
-### Custom Resolvers
-
-The default resolver handles only procs, functioning as follows:
-
-```ruby
-DEFAULT_RESOLVER = proc do |dependency|
-  dependency.is_a?(Proc) ? dependency.call : dependency
-end
-```
-
-You can customize the resolver to fit your needs. For instance, to resolve
-strings to a DI container, you can modify the resolver like this:
-
-```ruby
-Diana.resolver = proc do |dependency|
-  case dependency
-  when String then DI_CONTAINER[dependency]
-  when Proc then dependency.call
-  else dependency
-  end
-end
-
-SomeClass.include Diana.dependencies(foo: 'utils.foo') # => DI_CONTAINER['utils.foo']
-```
-
 ### Methods Visibility
 
 By default, dependency methods are **private**. You can change this behavior by
@@ -141,9 +116,34 @@ end
 
 This structure ensures efficient and flexible dependency management.
 
+## Custom Resolvers
+
+The default resolver handles only procs, functioning as follows:
+
+```ruby
+DEFAULT_RESOLVER = proc do |dependency|
+  dependency.is_a?(Proc) ? dependency.call : dependency
+end
+```
+
+You can customize the resolver to fit your needs. For instance, to resolve
+strings to a DI container, you can modify the resolver like this:
+
+```ruby
+Diana.resolver = proc do |dependency|
+  case dependency
+  when String then DI_CONTAINER[dependency]
+  when Proc then dependency.call
+  else dependency
+  end
+end
+
+SomeClass.include Diana.dependencies(foo: 'utils.foo') # => DI_CONTAINER['utils.foo']
+```
+
 ## Important Notes
 
-- This gem is intended for use with classes that lack a manually defined
+- This gem is intended for use with classes that have no manually defined
   `#initialize` method. This design choice prevents  conflicts or unpredictable
   behavior with custom #initialize methods. If you do add a custom `#initialize`
   method, it will take precedence. In such cases, ensure you include a
@@ -151,7 +151,7 @@ This structure ensures efficient and flexible dependency management.
 
 - We do not perform any argument modifications and we do not call `super`
   in dependencies `#initialize` method. This approach is chosen to ensure
-  optimal performance and avoid unexpected behavior.
+  optimal performance.
 
 - Dependencies defined in a parent class are not accessible in nested classes.
   You should define dependencies within each class where they are required.
