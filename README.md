@@ -1,4 +1,4 @@
-# Diana - Dependency Injection DSL
+# Diana - Lazy Dependency Injection
 
 This module offers a DSL designed for the lazy resolution of dependency injections.
 
