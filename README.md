@@ -1,3 +1,8 @@
+[![Gem Version](https://badge.fury.io/rb/diana.svg)](https://badge.fury.io/rb/diana)
+[![GitHub Actions](https://github.com/aglushkov/diana/actions/workflows/main.yml/badge.svg?event=push)](https://github.com/aglushkov/diana/actions/workflows/main.yml)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/9e874aec44744552e642/test_coverage)](https://codeclimate.com/github/aglushkov/diana/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/9e874aec44744552e642/maintainability)](https://codeclimate.com/github/aglushkov/diana/maintainability)
+
 # Diana - Lazy Dependency Injection
 
 This module offers a DSL designed for the lazy resolution of dependency injections.
