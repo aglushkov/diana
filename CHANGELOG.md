@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
-## [0.0.1] - 2024-12-17
+## [0.1.1] - 2024-12-17
+
+- Change gem description
+- Add badges to README
+
+## [0.1.0] - 2024-12-17
 
 - Initial release
