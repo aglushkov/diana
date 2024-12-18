@@ -9,13 +9,16 @@ Gem::Specification.new do |spec|
   spec.email = ["aglushkov@shakuro.com"]
 
   spec.summary = "Lazy Dependency Injection"
-  spec.description = "Lazy Dependency Injection"
+  spec.description = <<~DESC
+    Lazy Dependency Injection.
+    Dependencies are allocated only when needed, optimizing performance.
+  DESC
 
   spec.homepage = "https://github.com/aglushkov/diana"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.6.0"
 
-  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = spec.homepage + "/blob/master/CHANGELOG.md"
 
   spec.files = Dir["lib/**/*.rb"] << "VERSION" << "README.md"
