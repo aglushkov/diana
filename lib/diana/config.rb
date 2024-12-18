@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 module Diana
+  #
+  # Defines Diana module configuration methods
+  #
   module Config
     # The default resolver for dependencies.
     DEFAULT_RESOLVER = proc { |dependency| dependency.is_a?(Proc) ? dependency.call : dependency }

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-12-18
+
 - Parent dependencies are now included in child classes. Previously, child
   classes inherited attribute readers and the `initialize` method but did not
   have specified default dependencies. This issue has now been fixed.
