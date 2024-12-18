@@ -58,13 +58,13 @@ module Diana
     # @example Setting the default visibility of dependency methods to public.
     #   Diana.methods_visibility = :public
     #
-    # @param visibility [Symbol] The new visibility for dependency methods (:private or :public).
+    # @param visibility [Symbol] The new visibility for dependency methods (:private, :public, :protected).
     # @return [Symbol] The new default visibility for dependency methods.
-    # @raise [ArgumentError] If the visibility is not :private or :public.
+    # @raise [ArgumentError] If the visibility is not :private, :public, or :protected.
     #
     def methods_visibility=(visibility)
-      if (visibility != :private) && (visibility != :public)
-        raise ArgumentError, "methods_visibility value must be :private or :public"
+      if (visibility != :private) && (visibility != :public) && (visibility != :protected)
+        raise ArgumentError, "methods_visibility value must be :private, :public, or :protected"
       end
 
       @methods_visibility = visibility

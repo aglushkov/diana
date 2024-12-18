@@ -66,12 +66,29 @@ By default, dependency methods are **private**. You can change this behavior by
 configuring the Diana module:
 
 ```ruby
-Diana.methods_visibility = :public
+Diana.methods_visibility = :public # private, public, protected
 ```
 
-Using public methods can be more convenient in tests, allowing you to access the
-real dependency and stub its methods, rather than overwriting the dependency
+Using **public** methods can be more convenient in tests, allowing you to access
+the real dependency and stub its methods, rather than overwriting the dependency
 entirely. This approach helps ensure you are testing the correct dependency.
+
+### Inheritance
+
+Classes with included dependencies can be nested. Dependencies from parent and
+child classes are merged.
+
+### Adding dependencies multiple times
+
+`Diana.dependencies` method can be used multiple times. In this case
+dependencies are merged.
+
+```ruby
+class SomeClass
+  include Diana.dependencies(foo: proc { Foo.new })
+  include Diana.dependencies(bar: proc { Bar.new })
+end
+```
 
 ## How it works
 
@@ -102,17 +119,26 @@ class SomeClass
     bar: proc { Bar.new }
   }
 
+  # handles dependency injection
   def initialize(foo: nil, bar: nil)
     @foo = foo if foo
     @bar = bar if bar
   end
 
+  # handles inheritance
+  def self.inherited(subclass)
+    subclass.include Diana.dependencies(@_diana_dependencies)
+    super
+  end
+
   private
 
+  # handles lazy `foo` resolution
   def foo
     @foo ||= Diana.resolve(self.class.instance_variable_get(:@_diana_dependencies)[:foo])
   end
 
+  # handles lazy `bar` resolution
   def bar
     @bar ||= Diana.resolve(self.class.instance_variable_get(:@_diana_dependencies)[:bar])
   end
@@ -154,12 +180,8 @@ SomeClass.include Diana.dependencies(foo: 'utils.foo') # => DI_CONTAINER['utils.
   method, it will take precedence. In such cases, ensure you include a
   `super(**deps)` call to override dependencies if needed.
 
-- We do not perform any argument modifications and we do not call `super`
-  in dependencies `#initialize` method. This approach is chosen to ensure
-  optimal performance.
-
-- Dependencies defined in a parent class are not accessible in nested classes.
-  You should define dependencies within each class where they are required.
+- We avoid calling `super` in the added `#initialize` method to prevent the need
+  for arguments modifications, which could negatively impact performance.
 
 These limitations ensure that the gem remains predictable and performant,
 avoiding any hidden complexities or unexpected behaviors.
