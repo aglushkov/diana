@@ -28,18 +28,44 @@ RSpec.describe "Diana::Config" do
   describe ".methods_visibility, .methods_visibility=" do
     it "returns the default private visibility if no custom visibility is set" do
       expect(Diana.methods_visibility).to eq :private
+
+      klass = Class.new { include Diana.dependency(foo: "foo") }
+      expect(klass.new.private_methods).to include :foo
     end
 
-    it "sets & returns the custom visibility" do
+    it "sets & returns the `private` visibility" do
+      Diana.methods_visibility = :private
+      expect(Diana.methods_visibility).to eq(:private)
+
+      klass = Class.new { include Diana.dependency(foo: "foo") }
+      expect(klass.new.private_methods).to include :foo
+    ensure
+      Diana.remove_instance_variable(:@methods_visibility)
+    end
+
+    it "sets & returns the `public` visibility" do
       Diana.methods_visibility = :public
       expect(Diana.methods_visibility).to eq(:public)
+
+      klass = Class.new { include Diana.dependency(foo: "foo") }
+      expect(klass.new.public_methods).to include :foo
+    ensure
+      Diana.remove_instance_variable(:@methods_visibility)
+    end
+
+    it "sets & returns the `protected` visibility" do
+      Diana.methods_visibility = :protected
+      expect(Diana.methods_visibility).to eq(:protected)
+
+      klass = Class.new { include Diana.dependency(foo: "foo") }
+      expect(klass.new.protected_methods).to include :foo
     ensure
       Diana.remove_instance_variable(:@methods_visibility)
     end
 
     it "raises error for invalid visibility" do
-      expect { Diana.methods_visibility = :protected }
-        .to raise_error ArgumentError, "methods_visibility value must be :private or :public"
+      expect { Diana.methods_visibility = :foo }
+        .to raise_error ArgumentError, "methods_visibility value must be :private, :public, or :protected"
     end
   end
 end

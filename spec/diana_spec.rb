@@ -57,12 +57,54 @@ RSpec.describe Diana do
       expect(obj.__send__(:bar)).to eq "bar"
     end
 
-    it "allows to use `.dependencies` method as alias to `.dependency`" do
+    it "merges parent and subclasses dependencies" do
+      parent = Class.new
+      parent.include described_class.dependency(foo: "PARENT_FOO", bar: "PARENT_BAR")
+      subclass1 = Class.new(parent)
+      subclass1.include described_class.dependency(bar: "CHILD_BAR", bazz: "CHILD_BAZZ")
+      subclass2 = Class.new(subclass1)
+      subclass2.include described_class.dependency(bazz: "CHILD_BAZZ_2")
+
+      expect(parent.instance_variable_get(:@_diana_dependencies))
+        .to eq(foo: "PARENT_FOO", bar: "PARENT_BAR")
+
+      expect(subclass1.instance_variable_get(:@_diana_dependencies))
+        .to eq(foo: "PARENT_FOO", bar: "CHILD_BAR", bazz: "CHILD_BAZZ")
+
+      expect(subclass2.instance_variable_get(:@_diana_dependencies))
+        .to eq(foo: "PARENT_FOO", bar: "CHILD_BAR", bazz: "CHILD_BAZZ_2")
+
+      obj = subclass2.new
+      expect(obj.__send__(:foo)).to eq "PARENT_FOO"
+      expect(obj.__send__(:bar)).to eq "CHILD_BAR"
+      expect(obj.__send__(:bazz)).to eq "CHILD_BAZZ_2"
+    end
+
+    it "allows to overwrite parent dependencies in subclass `initialize` method" do
+      parent = Class.new
+      parent.include described_class.dependency(foo: "PARENT_FOO")
+      subclass = Class.new(parent)
+
+      obj = subclass.new(foo: "OVERWRITE_FOO")
+      expect(obj.__send__(:foo)).to eq "OVERWRITE_FOO"
+    end
+
+    it "allows to use `include Diana.dependency` multiple times and merges this dependencies" do
+      klass = Class.new
+      klass.include described_class.dependencies(foo: "FOO", bar: "BAR")
+      klass.include described_class.dependencies(bar: "BAR2", baz: "BAZ")
+
+      obj = klass.new
+      expect(obj.__send__(:foo)).to eq "FOO"
+      expect(obj.__send__(:bar)).to eq "BAR2"
+      expect(obj.__send__(:baz)).to eq "BAZ"
+    end
+
+    it "allows to use `.dependency` method as alias to `.dependencies`" do
       klass = Class.new
       klass.include described_class.dependency(foo: proc { "DEPENDENCY" })
-      klass.include described_class.dependencies(foo: proc { "DEPENDENCIES" })
       obj = klass.new
-      expect(obj.__send__(:foo)).to eq "DEPENDENCIES"
+      expect(obj.__send__(:foo)).to eq "DEPENDENCY"
     end
 
     it "allows to include multiple dependencies" do
@@ -78,10 +120,11 @@ RSpec.describe Diana do
       expect(obj.__send__(:bar)).to eq "BAR"
     end
 
-    it "loads single Diana module for instance" do
+    it "adds `inspect` method to loaded modules" do
       klass = Class.new { include Diana.dependencies(foo: nil) }
 
       expect(klass.ancestors).to be_one { |mod| mod.inspect.start_with?("<Diana.dependencies:") }
+      expect(klass.singleton_class.ancestors).to be_one { |mod| mod.inspect.start_with?("<Diana.inheritance:") }
     end
   end
 end
